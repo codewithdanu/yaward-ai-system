@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: yaward-db
+    environment:
+      POSTGRES_USER: yaward
+      POSTGRES_PASSWORD: yaward123
+      POSTGRES_DB: yaward_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yaward -d yaward_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Flask Backend ────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./yaward-backend
+      dockerfile: Dockerfile
+    container_name: yaward-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://yaward:yaward123@db:5432/yaward_db
+      FLASK_ENV: production
+      SECRET_KEY: yaward-production-secret-change-me
+      CONFIDENCE_THRESHOLD: "0.7"
+      IOU_THRESHOLD: "0.45"
+      MODEL_PATH: yolov8_ppe.pt
+      ALLOWED_ORIGINS: http://localhost:3000,http://yaward-frontend:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./yaward-backend:/app
+      - model_cache:/root/.cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── NextJS Frontend ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./yaward-frontend
+      dockerfile: Dockerfile
+    container_name: yaward-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NODE_ENV: production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  model_cache:
