@@ -50,10 +50,10 @@ export default function LoginPage() {
   const handleFillDemo = (userType: 'admin' | 'staff') => {
     if (userType === 'admin') {
       setUsername('admin');
-      setPassword('admin123');
+      setPassword('123456');
     } else {
       setUsername('staff');
-      setPassword('staff123');
+      setPassword('123456');
     }
     setError('');
   };

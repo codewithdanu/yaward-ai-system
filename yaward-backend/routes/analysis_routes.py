@@ -235,6 +235,10 @@ def gen_live_stream(rtsp_url, cctv_id, detector, analyzer, app):
                         violations = analyzer.analyze(detections, cctv_id, image_bytes=frame_bytes)
                         if violations:
                             _alert_service.send_alerts(violations, cctv_id)
+                        
+                        # Explicitly clean up and return the DB connection to the pool
+                        from database_models import db
+                        db.session.remove()
                 except Exception as e:
                     logger.error(f"AI live detection failed: {e}")
             

@@ -55,10 +55,10 @@ def create_app(config_name: str = None) -> Flask:
         from database_models import User
         if User.query.count() == 0:
             admin_user = User(username="admin", email="admin@yaward.com", role="admin")
-            admin_user.set_password("admin123")
+            admin_user.set_password("123456")
             
             staff_user = User(username="staff", email="staff@yaward.com", role="staff")
-            staff_user.set_password("staff123")
+            staff_user.set_password("123456")
             
             db.session.add(admin_user)
             db.session.add(staff_user)

@@ -252,7 +252,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {staffList.map((email) => {
+                {staffList.map((email: string) => {
                   const isSelected = emails.includes(email);
                   return (
                     <button

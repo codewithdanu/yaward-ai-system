@@ -19,8 +19,7 @@ export default function Sidebar() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    // Show Live Feeds / CCTV management only for admin
-    ...(user?.role === 'admin' ? [{ name: 'Live Feeds', href: '/feeds', icon: Camera }] : []),
+    { name: 'Live Feeds', href: '/feeds', icon: Camera },
     { name: 'Alerts', href: '/alerts', icon: Bell },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     // Show Settings only for admin

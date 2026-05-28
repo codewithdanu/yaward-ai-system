@@ -25,5 +25,5 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 5000
 
-# Use gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "app:app"]
+# Use gunicorn with multi-threaded gthread worker class and no timeout for streaming
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--worker-class", "gthread", "--threads", "8", "--timeout", "0", "app:app"]

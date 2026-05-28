@@ -129,78 +129,6 @@ export default function DashboardPage() {
         {/* AI CCTV Simulator Panel */}
         <CCTVSimulator />
 
-        {/* Main Content: Camera Grid + Alerts Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Camera Feeds Grid */}
-          <section id="dashboard-feeds" className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Live Camera Feeds
-              </h2>
-              <span className="text-xs text-slate-400">{cameras.length} cameras</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {camerasLoading ? (
-                Array.from({ length: cameras.length || 6 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="bg-slate-200 aspect-video rounded-lg animate-pulse border border-slate-200" />
-                    <div className="h-3.5 bg-slate-200 rounded animate-pulse w-24 px-0.5" />
-                  </div>
-                ))
-              ) : (
-                cameras.map((c) => (
-                  <FeedTile
-                    key={c.id}
-                    cameraId={c.id}
-                    hasViolation={camerasWithViolations.has(c.id)}
-                    onClick={() => {
-                      const latestViolation = violations.find(
-                        (v) => v.cctv_id === c.id && !v.acknowledged
-                      );
-                      if (latestViolation) openAlertModal(latestViolation);
-                    }}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Recent Alerts Panel */}
-          <aside
-            id="dashboard-alerts-panel"
-            className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col"
-          >
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Recent Alerts
-              </h2>
-              {unacknowledged > 0 && (
-                <span className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">
-                  {unacknowledged} active
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {alertsLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-100 rounded-md animate-pulse" />
-                ))
-              ) : recentAlerts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-center">
-                  <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
-                  <p className="text-xs text-slate-500">No active violations</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">All clear</p>
-                </div>
-              ) : (
-                recentAlerts.map((v) => (
-                  <AlertPreview key={v.id} violation={v} />
-                ))
-              )}
-            </div>
-          </aside>
-        </div>
-
         {/* Violations Type Breakdown */}
         {stats?.violations_by_type && Object.keys(stats.violations_by_type).length > 0 && (
           <section id="dashboard-breakdown" className="bg-white border border-slate-200 rounded-lg p-5">
@@ -238,6 +166,78 @@ export default function DashboardPage() {
             </div>
           </section>
         )}
+
+        {/* Main Content: Camera Grid + Alerts Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Camera Feeds Grid */}
+          <section id="dashboard-feeds" className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Live Camera Feeds
+              </h2>
+              <span className="text-xs text-slate-400">{cameras.length} cameras</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {camerasLoading ? (
+                Array.from({ length: cameras.length || 6 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="bg-slate-200 aspect-video rounded-lg animate-pulse border border-slate-200" />
+                    <div className="h-3.5 bg-slate-200 rounded animate-pulse w-24 px-0.5" />
+                  </div>
+                ))
+              ) : (
+                cameras.map((c) => (
+                  <FeedTile
+                    key={c.id}
+                    cameraId={c.id}
+                    hasViolation={camerasWithViolations.has(c.id)}
+                    onClick={() => {
+                      const latestViolation = violations.find(
+                        (v) => v.cctv_id === c.id && !v.acknowledged
+                      );
+                      if (latestViolation) openAlertModal(latestViolation);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Recent Alerts Panel with fixed height and scrollbar */}
+          <aside
+            id="dashboard-alerts-panel"
+            className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col h-[460px]"
+          >
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Recent Alerts
+              </h2>
+              {unacknowledged > 0 && (
+                <span className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">
+                  {unacknowledged} active
+                </span>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {alertsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-16 bg-slate-100 rounded-md animate-pulse" />
+                ))
+              ) : recentAlerts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
+                  <p className="text-xs text-slate-500">No active violations</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">All clear</p>
+                </div>
+              ) : (
+                recentAlerts.map((v) => (
+                  <AlertPreview key={v.id} violation={v} />
+                ))
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );
