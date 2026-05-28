@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useYAWardStore } from '../../lib/store';
 import {
@@ -10,7 +11,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ShieldCheck,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -30,8 +30,8 @@ export default function Sidebar() {
     <aside className="fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-slate-200 flex flex-col">
       {/* Logo */}
       <div className="h-16 flex items-center gap-2.5 px-5 border-b border-slate-200">
-        <div className="flex items-center justify-center w-8 h-8 bg-red-600 rounded-lg">
-          <ShieldCheck className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 p-0.5">
+          <Image src="/images/logo.png" alt="YAWard Logo" width={28} height={28} className="object-contain" />
         </div>
         <div>
           <span className="text-base font-bold text-slate-900 tracking-tight">YAWard</span>

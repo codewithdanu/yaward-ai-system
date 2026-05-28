@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useYAWardStore } from '../../lib/store';
-import { Shield, Eye, EyeOff, Lock, User, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, AlertTriangle } from 'lucide-react';
 
 export default function LoginPage() {
   const { loginAction, isAuthenticated, isAuthLoading, initializeAuth } = useYAWardStore();
@@ -59,29 +60,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-[#090d16] font-sans overflow-hidden p-4">
+    <div className="min-h-screen relative flex items-center justify-center bg-slate-50 font-sans overflow-hidden p-4">
       {/* Dynamic Ambient Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-900/20 rounded-full blur-[120px]" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-100/40 rounded-full blur-[120px]" />
 
       <div className="w-full max-w-md relative z-10">
         {/* Header Logo & Title */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex p-3 bg-red-500/10 border border-red-500/30 rounded-2xl mb-3 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
-            <Shield className="w-8 h-8 text-red-500" />
+          <div className="inline-flex p-3 bg-white border border-slate-100 rounded-2xl mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden">
+            <Image src="/images/logo.png" width={40} height={40} className="object-contain" alt="YAWard Logo" />
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            YA<span className="text-red-500">Ward</span>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            YA<span className="text-red-600">Ward</span>
           </h1>
-          <p className="text-slate-400 mt-1 text-sm">AI-Powered Industrial Safety Portal</p>
+          <p className="text-slate-500 mt-1 text-sm">AI-Powered Industrial Safety Portal</p>
         </div>
 
         {/* Glassmorphic Card Container */}
-        <div className="bg-[#121826]/70 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-6">Sign In</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-3xl p-8 shadow-xl">
+          <h2 className="text-xl font-bold text-slate-900 mb-6">Sign In</h2>
 
           {error && (
-            <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-6 text-red-400 text-sm animate-shake">
+            <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mb-6 text-red-600 text-sm animate-shake">
               <AlertTriangle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -90,9 +91,9 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Username Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Username</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Username</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <User className="w-5 h-5" />
                 </div>
                 <input
@@ -101,16 +102,16 @@ export default function LoginPage() {
                   placeholder="Enter username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-[#0d111d]/90 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:border-red-500/50 focus:outline-none transition-all"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:border-red-500/50 focus:bg-white focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Password Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
@@ -119,12 +120,12 @@ export default function LoginPage() {
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-11 py-3 bg-[#0d111d]/90 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:border-red-500/50 focus:outline-none transition-all"
+                  className="w-full pl-11 pr-11 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:border-red-500/50 focus:bg-white focus:outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -151,10 +152,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
+              <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#121826]/10 backdrop-blur-md px-3 text-slate-500 font-semibold tracking-wider">Demo Accounts</span>
+              <span className="bg-white/80 backdrop-blur-md px-3 text-slate-400 font-semibold tracking-wider">Demo Accounts</span>
             </div>
           </div>
 
@@ -162,16 +163,16 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleFillDemo('admin')}
-              className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-slate-800 bg-[#0d111d]/30 hover:bg-[#0d111d]/60 hover:border-slate-700 transition-all text-left cursor-pointer group"
+              className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-slate-300 transition-all text-left cursor-pointer group"
             >
-              <span className="text-xs font-bold text-red-400 mb-0.5 group-hover:text-red-300 transition-colors">Admin Dashboard</span>
+              <span className="text-xs font-bold text-red-600 mb-0.5 group-hover:text-red-700 transition-colors">Admin Dashboard</span>
               <span className="text-[10px] text-slate-500">Full CRUD & Email Configs</span>
             </button>
             <button
               onClick={() => handleFillDemo('staff')}
-              className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-slate-800 bg-[#0d111d]/30 hover:bg-[#0d111d]/60 hover:border-slate-700 transition-all text-left cursor-pointer group"
+              className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-slate-300 transition-all text-left cursor-pointer group"
             >
-              <span className="text-xs font-bold text-blue-400 mb-0.5 group-hover:text-blue-300 transition-colors">Staff Monitor</span>
+              <span className="text-xs font-bold text-blue-600 mb-0.5 group-hover:text-blue-700 transition-colors">Staff Monitor</span>
               <span className="text-[10px] text-slate-500">Read-Only + Acknowledge</span>
             </button>
           </div>
