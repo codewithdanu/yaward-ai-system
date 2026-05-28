@@ -29,9 +29,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#090d16] flex items-center justify-center flex-col gap-4 font-sans text-white">
-        <div className="w-12 h-12 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
-        <span className="text-slate-400 text-xs font-bold tracking-widest uppercase animate-pulse">Initializing System...</span>
+      <div className="min-h-screen relative bg-slate-50 flex items-center justify-center flex-col gap-4 font-sans overflow-hidden">
+        {/* Dynamic Ambient Background Glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-100/40 rounded-full blur-[120px]" />
+
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-500/10 border-t-red-500 rounded-full animate-spin" />
+          <span className="text-slate-500 text-xs font-extrabold tracking-widest uppercase animate-pulse">Initializing System...</span>
+        </div>
       </div>
     );
   }
