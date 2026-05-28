@@ -164,11 +164,11 @@ export default function CCTVSimulator() {
             />
 
             {previewUrl ? (
-              <div className="relative border border-slate-200 rounded bg-slate-950 flex-1 min-h-[140px] flex items-center justify-center overflow-hidden aspect-video">
+              <div className="relative border border-slate-200 rounded bg-slate-950 flex-1 min-h-[200px] md:min-h-[250px] flex items-center justify-center overflow-hidden aspect-video">
                 <img
                   src={previewUrl}
                   alt="CCTV Preview"
-                  className="object-contain max-h-[160px] w-full h-full opacity-90"
+                  className="object-contain max-h-full w-full h-full opacity-90"
                 />
                 <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-mono">
                   {file?.name} ({(file!.size / 1024).toFixed(1)} KB)
