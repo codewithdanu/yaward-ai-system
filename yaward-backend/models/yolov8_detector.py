@@ -66,10 +66,11 @@ class YAWardDetector:
         else:
             raise TypeError(f"Unsupported image type: {type(image_input)}")
 
-        # Run inference
+        # Run inference with a lower base threshold so class-specific thresholds can filter them afterwards
+        base_conf = min(self.confidence_threshold, 0.55)
         results = self._model(
             image,
-            conf=self.confidence_threshold,
+            conf=base_conf,
             iou=self.iou_threshold,
             verbose=False,
         )
@@ -115,6 +116,22 @@ class YAWardDetector:
                 bbox = box.xyxy[0].tolist()  # [x1, y1, x2, y2] absolute pixels
 
                 class_name = self._model.names[cls_id].lower()
+
+                # ── Class-specific confidence thresholds filter ──
+                class_thresholds = {
+                    "person": 0.80,
+                    "helmet": 0.65,
+                    "hard hat": 0.65,
+                    "hardhat": 0.65,
+                    "vest": 0.65,
+                    "safety vest": 0.65,
+                    "safety-vest": 0.65,
+                }
+                # Fallback to the configured model's base confidence threshold or 0.65
+                min_conf = class_thresholds.get(class_name, max(self.confidence_threshold, 0.65))
+                if conf < min_conf:
+                    logger.debug(f"Skipping {class_name} detection due to confidence below class-specific threshold: {conf:.2f} < {min_conf:.2f}")
+                    continue
 
                 obj_data = {
                     "id": f"{class_name}_{i}",
