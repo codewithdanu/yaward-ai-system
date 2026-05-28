@@ -95,25 +95,25 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`
-        relative bg-slate-900 rounded-lg overflow-hidden cursor-pointer
+        relative bg-slate-100 rounded-lg overflow-hidden cursor-pointer
         aspect-video border-2 transition-all duration-200
-        ${hasViolation ? 'border-red-500' : isOffline ? 'border-slate-700' : 'border-slate-800'}
-        ${isHovered ? 'ring-2 ring-offset-1 ring-slate-400' : ''}
+        ${hasViolation ? 'border-red-500' : isOffline ? 'border-slate-200' : 'border-slate-200/60'}
+        ${isHovered ? 'ring-2 ring-offset-1 ring-slate-300' : ''}
       `}
     >
       {/* Camera Feed Placeholder */}
       {isOffline ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-800">
-          <WifiOff className="w-6 h-6 text-slate-500" />
-          <p className="text-xs text-slate-500 font-medium">Signal Lost</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100">
+          <WifiOff className="w-6 h-6 text-slate-400" />
+          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Signal Lost</p>
         </div>
       ) : (
         <>
           {/* Loading Overlay */}
           {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950 z-10">
-              <div className="w-6 h-6 border-2 border-slate-800 border-t-red-500 rounded-full animate-spin" />
-              <p className="text-[10px] text-slate-500 font-mono tracking-wider uppercase">Connecting Feed...</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-50 z-10">
+              <div className="w-6 h-6 border-2 border-slate-200 border-t-red-500 rounded-full animate-spin" />
+              <p className="text-[10px] text-slate-400 font-mono tracking-wider uppercase">Connecting Feed...</p>
             </div>
           )}
 
@@ -131,12 +131,13 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
             />
           ) : (
             <>
-              {/* Fallback layout: Grid overlay simulating camera noise */}
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900 opacity-60" />
+              {/* Fallback layout: Light slate background */}
+              <div className="absolute inset-0 bg-slate-50" />
               
               {/* Camera icon in center */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Camera className="w-8 h-8 text-slate-600 opacity-40" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                <Camera className="w-7 h-7 text-slate-300" />
+                <p className="text-[10px] text-slate-400 font-mono uppercase">Feed Offline</p>
               </div>
             </>
           )}
@@ -151,7 +152,7 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
 
           {/* Violation flash overlay */}
           {hasViolation && (
-            <div className="absolute inset-0 bg-red-900/20 border-2 border-red-500 animate-pulse pointer-events-none" />
+            <div className="absolute inset-0 bg-red-500/10 border-2 border-red-500 animate-pulse pointer-events-none" />
           )}
         </>
       )}
