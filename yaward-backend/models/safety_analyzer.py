@@ -110,22 +110,7 @@ class SafetyAnalyzer:
 
             # Rule 3: Danger zone intrusion
             if is_camera_danger:
-                if "INTRUSION" not in recent_types:
-                    violations.append(self._create_violation(
-                        type_="INTRUSION",
-                        severity="CRITICAL",
-                        person_id=person_id,
-                        cctv_id=cctv_id,
-                        message=f"Pekerja {person_id} terdeteksi di Area Berbahaya ({camera_name})",
-                        metadata={
-                            "person_bbox": person_bbox,
-                            "zone_id": "camera_global_danger",
-                            "zone_name": camera_name,
-                            "confidence": person["confidence"],
-                        },
-                    ))
-                    recent_types.add("INTRUSION")
-            else:
+                entered_specific_zone = False
                 for zone in self.danger_zones:
                     if self._is_in_polygon(person_bbox, zone["polygon"]):
                         if "INTRUSION" not in recent_types:
@@ -143,6 +128,24 @@ class SafetyAnalyzer:
                                 },
                             ))
                             recent_types.add("INTRUSION")
+                        entered_specific_zone = True
+                        break
+
+                if not entered_specific_zone and "INTRUSION" not in recent_types:
+                    violations.append(self._create_violation(
+                        type_="INTRUSION",
+                        severity="CRITICAL",
+                        person_id=person_id,
+                        cctv_id=cctv_id,
+                        message=f"Pekerja {person_id} terdeteksi di Area Berbahaya ({camera_name})",
+                        metadata={
+                            "person_bbox": person_bbox,
+                            "zone_id": "camera_global_danger",
+                            "zone_name": camera_name,
+                            "confidence": person["confidence"],
+                        },
+                    ))
+                    recent_types.add("INTRUSION")
 
             # Rule 4: Mask check (MEDIUM severity)
             has_mask = self._has_protection(person_bbox, masks)
