@@ -11,16 +11,17 @@ interface FeedTileProps {
 }
 
 export default function FeedTile({ cameraId, hasViolation = false, onClick }: FeedTileProps) {
+  const cameras = useYAWardStore((s) => s.cameras);
+  const cameraConfig = cameras.find((c) => c.id === cameraId);
+  const isOffline = cameraConfig ? cameraConfig.status === 'offline' : false;
+  const rtspUrl = cameraConfig?.rtspUrl;
+
   const [isHovered, setIsHovered] = useState(false);
   const [feedError, setFeedError] = useState(false);
   const [streamError, setStreamError] = useState(false);
   const [retryCounter, setRetryCounter] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  const cameras = useYAWardStore((s) => s.cameras);
-  const cameraConfig = cameras.find((c) => c.id === cameraId);
-  const isOffline = cameraConfig ? cameraConfig.status === 'offline' : false;
-  const rtspUrl = cameraConfig?.rtspUrl;
+  const [isLoading, setIsLoading] = useState(!isOffline);
 
   const toggleFullscreen = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent trigger parent onClick
@@ -60,16 +61,11 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
 
     const interval = setInterval(() => {
       setRetryCounter((prev) => prev + 1);
+      setFeedError(false); // Reset error state on retry interval directly
     }, 2000);
 
     return () => clearInterval(interval);
   }, [isOffline]);
-
-  // Reset feed error state to try reloading when retries increment
-  useEffect(() => {
-    if (isOffline) return;
-    setFeedError(false);
-  }, [retryCounter, isOffline]);
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   
@@ -79,6 +75,7 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
     : `${backendUrl}/api/cameras/${cameraId}/live?t=${retryCounter}`;
 
   const handleImageError = () => {
+    setIsLoading(false);
     if (rtspUrl && !streamError) {
       // Fallback from real-time stream endpoint to static cache
       setStreamError(true);
@@ -112,14 +109,25 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
         </div>
       ) : (
         <>
+          {/* Loading Overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950 z-10">
+              <div className="w-6 h-6 border-2 border-slate-800 border-t-red-500 rounded-full animate-spin" />
+              <p className="text-[10px] text-slate-500 font-mono tracking-wider uppercase">Connecting Feed...</p>
+            </div>
+          )}
+
           {/* Real live feed image from backend if active */}
           {!feedError ? (
             <img
               src={liveFeedUrl}
               alt={`Live Feed ${cameraId}`}
               onError={handleImageError}
-              onLoad={() => setFeedError(false)}
-              className="absolute inset-0 w-full h-full object-cover"
+              onLoad={() => {
+                setFeedError(false);
+                setIsLoading(false);
+              }}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             />
           ) : (
             <>
@@ -134,7 +142,7 @@ export default function FeedTile({ cameraId, hasViolation = false, onClick }: Fe
           )}
 
           {/* Premium Camera Indicator Overlay */}
-          {!feedError && (
+          {!feedError && !isLoading && (
             <div className="absolute top-2 left-2.5 bg-black/40 backdrop-blur-[1px] text-[9px] font-mono text-white/90 px-1.5 py-0.5 rounded flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
               REC

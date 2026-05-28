@@ -417,6 +417,7 @@ export default function FeedsPage() {
               {/* Large feed view */}
               <div className="max-w-2xl">
                 <FeedTile
+                  key={selectedCamera}
                   cameraId={selectedCamera}
                   hasViolation={camerasWithViolations.has(selectedCamera)}
                 />
