@@ -22,7 +22,7 @@ def test_login_success(client):
     """POST /api/auth/login with correct credentials should return 200 with token."""
     response = client.post(
         "/api/auth/login",
-        data=json.dumps({"username": "admin", "password": "admin123"}),
+        data=json.dumps({"username": "admin", "password": "123456"}),
         content_type="application/json"
     )
     assert response.status_code == 200

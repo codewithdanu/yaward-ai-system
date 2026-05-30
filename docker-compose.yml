@@ -33,7 +33,7 @@ services:
       DATABASE_URL: postgresql://yaward:yaward123@db:5432/yaward_db
       FLASK_ENV: production
       SECRET_KEY: yaward-production-secret-change-me
-      CONFIDENCE_THRESHOLD: "0.7"
+      TZ: Asia/Jakarta
       IOU_THRESHOLD: "0.45"
       MODEL_PATH: yolov8_ppe.pt
       ALLOWED_ORIGINS: http://localhost:3000,http://yaward-frontend:3000

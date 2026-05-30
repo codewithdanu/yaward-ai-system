@@ -149,3 +149,29 @@ def test_machinery_proximity_violation_low(analyzer):
     assert "MACHINERY_PROXIMITY" in types
     assert "LOW" in severities
 
+
+def test_bypass_no_vest_for_head_shoulders_only(analyzer):
+    """Person with only head/shoulders visible (relative to helmet height) should bypass NO_VEST violation."""
+    detections = {
+        "persons": [{"id": "person_0", "bbox": [100, 100, 300, 200], "confidence": 0.9, "center": [200, 150]}],
+        "helmets": [{"id": "helmet_0", "bbox": [120, 80, 280, 150], "confidence": 0.88, "center": [200, 115]}],
+        "vests": [],
+        "masks": [{"id": "mask_0", "bbox": [120, 110, 180, 150], "confidence": 0.9, "center": [200, 130]}],
+        "cones": [],
+        "machinery": [],
+        "vehicles": [],
+        "image_shape": {"width": 1920, "height": 1080},
+        "raw_count": {"persons": 1, "helmets": 1, "vests": 0, "masks": 1, "cones": 0, "machinery": 0, "vehicles": 0},
+    }
+    # Person bbox height is 200 - 100 = 100.
+    # Helmet bbox height is 150 - 80 = 70.
+    # 100 < 3.0 * 70 (210), so torso is deemed not visible.
+    violations = analyzer._get_violations_for_test(detections, "CCTV_001")
+    types = [v["type"] for v in violations]
+    
+    # Helmet is worn, so no NO_HELMET.
+    # Vest is missing, but torso is not visible, so NO_VEST should be bypassed.
+    assert "NO_VEST" not in types
+    assert "NO_HELMET" not in types
+
+

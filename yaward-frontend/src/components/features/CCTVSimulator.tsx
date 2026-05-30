@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Upload, AlertCircle, CheckCircle2, Loader2, RefreshCw, ShieldAlert } from 'lucide-react';
 import { uploadAndAnalyzeFrame } from '@/lib/api';
 import { useYAWardStore } from '@/lib/store';
+
+
 
 export default function CCTVSimulator() {
   const cameras = useYAWardStore((s) => s.cameras);
@@ -15,6 +17,8 @@ export default function CCTVSimulator() {
   const [result, setResult] = useState<any | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -62,6 +66,8 @@ export default function CCTVSimulator() {
     try {
       const response = await uploadAndAnalyzeFrame(file, selectedCamera);
       setResult(response.data);
+      
+
     } catch (err: any) {
       const errMsg = err.response?.data?.error || err.response?.data?.detail || err.message || 'Gagal mengirim gambar.';
       setError(errMsg);

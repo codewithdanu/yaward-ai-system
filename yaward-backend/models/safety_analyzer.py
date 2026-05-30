@@ -50,13 +50,16 @@ class SafetyAnalyzer:
         from database_models import db, Violation
 
         violations: List[Dict] = []
-        persons = detections.get("persons", [])
-        helmets = detections.get("helmets", [])
-        vests = detections.get("vests", [])
-        masks = detections.get("masks", [])
-        cones = detections.get("cones", [])
-        machinery = detections.get("machinery", [])
-        vehicles = detections.get("vehicles", [])
+        persons    = detections.get("persons", [])
+        helmets    = detections.get("helmets", [])
+        no_helmets = detections.get("no_helmets", [])  # direct model violation signal
+        vests      = detections.get("vests", [])
+        no_vests   = detections.get("no_vests", [])    # direct model violation signal
+        masks      = detections.get("masks", [])
+        no_masks   = detections.get("no_masks", [])
+        cones      = detections.get("cones", [])
+        machinery  = detections.get("machinery", [])
+        vehicles   = detections.get("vehicles", [])
 
         # Rate-limiting / Cooldown mechanism (e.g. 60 seconds per violation type per camera)
         cooldown_seconds = 60
@@ -82,9 +85,12 @@ class SafetyAnalyzer:
             person_id = person["id"]
             person_bbox = person["bbox"]
 
-            # Rule 1: Helmet check
-            has_helmet = self._has_protection(person_bbox, helmets)
-            if not has_helmet and "NO_HELMET" not in recent_types:
+            # ── Rule 1: NO HELMET ─────────────────────────────────────────────────
+            # ONLY fire when the model explicitly detects a "NO-Hardhat" bounding box
+            # overlapping this person. Do NOT infer from the absence of a Hardhat box —
+            # that would flag every civilian (cyclist, homeowner, passer-by).
+            model_no_helmet = self._has_protection(person_bbox, no_helmets) if no_helmets else False
+            if model_no_helmet and "NO_HELMET" not in recent_types:
                 violations.append(self._create_violation(
                     type_="NO_HELMET",
                     severity="HIGH",
@@ -93,11 +99,12 @@ class SafetyAnalyzer:
                     message=f"Worker {person_id} detected without helmet",
                     metadata={"person_bbox": person_bbox, "confidence": person["confidence"]},
                 ))
-                recent_types.add("NO_HELMET") # Prevent duplicate in same analysis tick
+                recent_types.add("NO_HELMET")
 
-            # Rule 2: Vest check
-            has_vest = self._has_protection(person_bbox, vests)
-            if not has_vest and "NO_VEST" not in recent_types:
+            # ── Rule 2: NO SAFETY VEST ───────────────────────────────────────────
+            # Same policy: only fire when model explicitly flags "NO-Safety Vest".
+            model_no_vest = self._has_protection(person_bbox, no_vests) if no_vests else False
+            if model_no_vest and "NO_VEST" not in recent_types:
                 violations.append(self._create_violation(
                     type_="NO_VEST",
                     severity="HIGH",
@@ -108,7 +115,7 @@ class SafetyAnalyzer:
                 ))
                 recent_types.add("NO_VEST")
 
-            # Rule 3: Danger zone intrusion
+            # ── Rule 3: INTRUSION (danger-zone cameras only) ──────────────────────
             if is_camera_danger:
                 entered_specific_zone = False
                 for zone in self.danger_zones:
@@ -147,24 +154,11 @@ class SafetyAnalyzer:
                     ))
                     recent_types.add("INTRUSION")
 
-            # Rule 4: Mask check (MEDIUM severity)
-            has_mask = self._has_protection(person_bbox, masks)
-            if not has_mask and "NO_MASK" not in recent_types:
-                violations.append(self._create_violation(
-                    type_="NO_MASK",
-                    severity="MEDIUM",
-                    person_id=person_id,
-                    cctv_id=cctv_id,
-                    message=f"Worker {person_id} detected without face mask",
-                    metadata={"person_bbox": person_bbox, "confidence": person["confidence"]},
-                ))
-                recent_types.add("NO_MASK")
-
-            # Rule 5: Machinery proximity check (LOW severity)
+            # ── Rule 4: MACHINERY PROXIMITY (LOW severity) ───────────────────────
             near_machinery = False
             for mach in machinery + vehicles:
                 dist = self._get_distance(person["center"], mach["center"])
-                if dist < 250:  # Within 250 pixels
+                if dist < 250:
                     near_machinery = True
                     break
 
@@ -317,6 +311,49 @@ class SafetyAnalyzer:
 
         return False
 
+    def _is_torso_visible(self, person_bbox: list, helmets: list, image_shape: dict) -> bool:
+        """
+        Check if the person's torso is likely visible in the frame.
+        Used to prevent false NO_VEST violations when only head/shoulders are visible.
+        """
+        p_x1, p_y1, p_x2, p_y2 = person_bbox
+        person_height = p_y2 - p_y1
+        person_width = p_x2 - p_x1
+
+        # 1. Find if there's a helmet associated with this person
+        associated_helmet = None
+        for h in helmets:
+            hx1, hy1, hx2, hy2 = h["bbox"]
+            # Overlap check
+            if (p_x1 < hx2 and p_x2 > hx1 and p_y1 < hy2 and p_y2 > hy1):
+                associated_helmet = h
+                break
+
+        if associated_helmet:
+            h_x1, h_y1, h_x2, h_y2 = associated_helmet["bbox"]
+            helmet_height = h_y2 - h_y1
+            # If person height is less than 3.0 times the helmet height,
+            # only the head and shoulders are visible. Torso is not visible.
+            if person_height < 3.0 * helmet_height:
+                logger.info(f"Skipping vest check: person height ({person_height:.1f}) < 3.0 * helmet height ({helmet_height:.1f})")
+                return False
+
+        # 2. Border check: if the bounding box is heavily cut off at the bottom or top
+        # and has a non-standard aspect ratio.
+        img_w = image_shape.get("width", 1920) if image_shape else 1920
+        img_h = image_shape.get("height", 1080) if image_shape else 1080
+
+        margin = 15
+        touches_top = p_y1 <= margin
+        touches_bottom = p_y2 >= img_h - margin
+
+        aspect_ratio = person_width / max(person_height, 1)
+        if (touches_top or touches_bottom) and aspect_ratio > 0.8:
+            logger.info(f"Skipping vest check: person cut off at borders with aspect ratio {aspect_ratio:.2f}")
+            return False
+
+        return True
+
     def _is_in_polygon(self, bbox: list, polygon_points: list) -> bool:
         """Check if person center point is inside a polygon (ray casting)."""
         center_x = (bbox[0] + bbox[2]) / 2
@@ -368,45 +405,37 @@ class SafetyAnalyzer:
         Mirrors the logic in analyze() but skips database writes.
         """
         violations: List[Dict] = []
-        persons = detections.get("persons", [])
-        helmets = detections.get("helmets", [])
-        vests = detections.get("vests", [])
-        masks = detections.get("masks", [])
-        cones = detections.get("cones", [])
-        machinery = detections.get("machinery", [])
-        vehicles = detections.get("vehicles", [])
+        persons    = detections.get("persons", [])
+        helmets    = detections.get("helmets", [])
+        no_helmets = detections.get("no_helmets", [])
+        vests      = detections.get("vests", [])
+        no_vests   = detections.get("no_vests", [])
+        masks      = detections.get("masks", [])
+        no_masks   = detections.get("no_masks", [])
+        cones      = detections.get("cones", [])
+        machinery  = detections.get("machinery", [])
+        vehicles   = detections.get("vehicles", [])
 
         for person in persons:
             person_id = person["id"]
             person_bbox = person["bbox"]
 
-            if not self._has_protection(person_bbox, helmets):
+            # Only fire when model explicitly signals NO-Hardhat
+            model_no_helmet = self._has_protection(person_bbox, no_helmets) if no_helmets else False
+            if model_no_helmet:
                 violations.append(self._create_violation(
                     type_="NO_HELMET", severity="HIGH",
                     person_id=person_id, cctv_id=cctv_id,
                     message=f"Worker {person_id} detected without helmet",
                 ))
 
-            if not self._has_protection(person_bbox, vests):
+            # Only fire when model explicitly signals NO-Safety Vest
+            model_no_vest = self._has_protection(person_bbox, no_vests) if no_vests else False
+            if model_no_vest:
                 violations.append(self._create_violation(
                     type_="NO_VEST", severity="HIGH",
                     person_id=person_id, cctv_id=cctv_id,
                     message=f"Worker {person_id} detected without safety vest",
-                ))
-
-            for zone in self.danger_zones:
-                if self._is_in_polygon(person_bbox, zone["polygon"]):
-                    violations.append(self._create_violation(
-                        type_="INTRUSION", severity="CRITICAL",
-                        person_id=person_id, cctv_id=cctv_id,
-                        message=f"Worker {person_id} entered {zone['name']}",
-                    ))
-
-            if not self._has_protection(person_bbox, masks):
-                violations.append(self._create_violation(
-                    type_="NO_MASK", severity="MEDIUM",
-                    person_id=person_id, cctv_id=cctv_id,
-                    message=f"Worker {person_id} detected without face mask",
                 ))
 
             near_machinery = False

@@ -182,6 +182,7 @@ def gen_live_stream(rtsp_url, cctv_id, detector, analyzer, app):
     Generator that opens an RTSP/webcam stream, runs YOLOv8 PPE detection on frames,
     draws bounding boxes, and streams MJPEG back to the browser.
     """
+    global LAST_FRAMES
     import cv2
     import numpy as np
     
@@ -213,13 +214,66 @@ def gen_live_stream(rtsp_url, cctv_id, detector, analyzer, app):
         "vests": []
     }
     
+    consecutive_failures = 0
+    last_valid_frame = None
+    
     try:
         while True:
             ret, frame = cap.read()
             if not ret:
-                logger.warning(f"RTSP stream disconnected for {cctv_id}")
-                break
+                consecutive_failures += 1
+                logger.warning(f"RTSP stream read failed ({consecutive_failures}) for {cctv_id}")
                 
+                import time
+                time.sleep(0.1) # Wait 100ms before retrying
+                
+                # If we have a previously cached frame, yield it with the "Camera Disconnected" banner overlay
+                if last_valid_frame is not None:
+                    overlay_frame = last_valid_frame.copy()
+                    h_img, w_img = overlay_frame.shape[:2]
+                    
+                    # Draw a semi-transparent red banner at the top
+                    banner_overlay = overlay_frame.copy()
+                    cv2.rectangle(banner_overlay, (0, 0), (w_img, 45), (0, 0, 255), -1)
+                    cv2.addWeighted(banner_overlay, 0.75, overlay_frame, 0.25, 0, overlay_frame)
+                    
+                    cv2.putText(overlay_frame, f"WARNING: {cctv_id} DISCONNECTED - RECONNECTING...", (15, 28),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                                
+                    success, jpeg_buf = cv2.imencode('.jpg', overlay_frame)
+                    if success:
+                        frame_bytes = jpeg_buf.tobytes()
+                        LAST_FRAMES[cctv_id] = frame_bytes
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+                
+                if consecutive_failures >= 15: # ~1.5 seconds of failure
+                    logger.info(f"Attempting to reconnect RTSP stream for {cctv_id}...")
+                    cap.release()
+                    time.sleep(1.0) # Wait 1 second before trying to open again
+                    cap = cv2.VideoCapture(source)
+                    if not cap.isOpened():
+                        logger.error(f"Reconnection attempt failed for {cctv_id}")
+                        if consecutive_failures > 90: # ~1.5 minutes of continuous failure
+                            logger.error(f"RTSP connection completely lost for {cctv_id}. Stopping stream.")
+                            break
+                    else:
+                        logger.info(f"RTSP stream successfully reconnected for {cctv_id}!")
+                        consecutive_failures = 0
+                continue
+                
+            # If successful, reset failure count
+            consecutive_failures = 0
+            
+            # Optimize resolution for real-time monitoring and AI inference to save CPU and bandwidth
+            h_orig, w_orig = frame.shape[:2]
+            if w_orig > 960:
+                scale = 960.0 / w_orig
+                new_h = int(h_orig * scale)
+                frame = cv2.resize(frame, (960, new_h))
+                
+            last_valid_frame = frame.copy()
+            
             frame_count += 1
             
             # Run AI detection every 6 frames to keep CPU usage perfectly light (approx. 5 times per sec)
@@ -278,7 +332,6 @@ def gen_live_stream(rtsp_url, cctv_id, detector, analyzer, app):
             frame_bytes = jpeg_buf.tobytes()
             
             # Cache the latest processed frame in our global LAST_FRAMES cache
-            global LAST_FRAMES
             LAST_FRAMES[cctv_id] = frame_bytes
             
             yield (b'--frame\r\n'

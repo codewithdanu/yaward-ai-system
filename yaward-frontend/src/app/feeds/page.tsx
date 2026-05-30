@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { api, deleteViolation, bulkDeleteViolations, registerCamera, updateCamera, deleteCamera } from '@/lib/api';
 import Topbar from '@/components/shared/Topbar';
 import FeedTile from '@/components/features/FeedTile';
 import { useYAWardStore, CameraConfig } from '@/lib/store';
 import { Camera, Info, Plus, X, Trash2, ShieldAlert, Lightbulb, Edit2 } from 'lucide-react';
+
+
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
@@ -40,6 +42,8 @@ export default function FeedsPage() {
     user
   } = useYAWardStore();
   const [selectedCamera, setSelectedCameraState] = useState<string | null>(null);
+  
+
 
   // Fetch cameras dynamically from PostgreSQL backend
   const { data: camerasData, isLoading: camerasLoading, mutate: mutateCameras } = useSWR(
@@ -59,11 +63,10 @@ export default function FeedsPage() {
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Fetch violations every 2s for real-time feel on feeds page
+  // Fetch violations (shares cache and auto-updates with global component)
   const { data: violationsData, isLoading: violationsLoading } = useSWR(
     '/api/violations?limit=50',
-    fetcher,
-    { refreshInterval: 2000 }
+    fetcher
   );
 
   // Sync into Zustand store

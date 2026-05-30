@@ -5,6 +5,7 @@ import { useYAWardStore } from '../../lib/store';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import AlertModal from '../features/AlertModal';
+import EmergencyAlertPopup from '../features/EmergencyAlertPopup';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -69,6 +70,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* Global Alert Modal */}
       <AlertModal />
+
+      {/* Global Emergency Alert Popup */}
+      <EmergencyAlertPopup />
     </div>
   );
 }
